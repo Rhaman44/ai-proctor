@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>ProctorAI — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0f14;--surface:#151820;--surface2:#1c2030;--surface3:#222840;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#e8eaf0;--muted:#7a7f92;
+  --accent:#5b7fff;--accent-dim:rgba(91,127,255,0.12);
+  --red:#ff4e4e;--red-dim:rgba(255,78,78,0.12);
+  --amber:#f5a623;--amber-dim:rgba(245,166,35,0.1);
+  --green:#3ecf8e;--green-dim:rgba(62,207,142,0.1);
+  --purple:#c864ff;--purple-dim:rgba(200,100,255,0.1);
+  --orange:#ff8c3c;--orange-dim:rgba(255,140,60,0.1);
+  --mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;display:flex;flex-direction:column;}
+
+/* ── NAV ── */
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:0;z-index:100;}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:30px;height:30px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;}
+.logo-text{font-family:var(--mono);font-size:14px;font-weight:700;}.logo-text span{color:var(--accent);}
+.nav-tabs{display:flex;gap:2px;}
+.nav-tab{padding:7px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--muted);transition:all 0.15s;}
+.nav-tab:hover{background:var(--surface2);color:var(--text);}
+.nav-tab.active{background:var(--accent-dim);color:var(--accent);}
+.header-right{display:flex;align-items:center;gap:12px;}
+.live-dot-wrap{display:flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);color:var(--green);}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.5s ease infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.btn-sm{font-size:12px;font-family:var(--mono);padding:6px 14px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;transition:all 0.15s;}
+.btn-sm:hover{background:var(--surface2);color:var(--text);}
+.btn-accent{background:var(--accent);border-color:var(--accent);color:white;}
+.btn-accent:hover{background:#4a6ef5;color:white;}
+.btn-danger{background:var(--red-dim);border-color:rgba(255,78,78,0.3);color:var(--red);}
+.btn-danger:hover{background:rgba(255,78,78,0.2);}
+
+/* ── PAGES ── */
+.page{display:none;flex:1;}.page.active{display:flex;}
+
+/* ── LAYOUT ── */
+.layout{display:grid;grid-template-columns:240px 1fr;flex:1;width:100%;}
+.sidebar{border-right:1px solid var(--border);padding:20px 0;background:var(--surface);overflow-y:auto;height:calc(100vh - 57px);position:sticky;top:57px;}
+.sidebar-label{font-size:10px;font-family:var(--mono);letter-spacing:0.12em;color:var(--muted);text-transform:uppercase;padding:0 16px 8px;}
+main{padding:24px 28px;overflow-y:auto;flex:1;}
+
+/* ── STUDENT CARDS (sidebar) ── */
+.stu-card{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;transition:background 0.1s;border-left:2px solid transparent;margin-bottom:1px;}
+.stu-card:hover{background:var(--surface2);}
+.stu-card.active{background:var(--accent-dim);border-left-color:var(--accent);}
+.stu-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
+.stu-meta{flex:1;min-width:0;}
+.stu-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.stu-status{font-size:11px;color:var(--muted);margin-top:1px;}
+.vbadge{font-size:10px;font-family:var(--mono);font-weight:700;padding:2px 7px;border-radius:20px;min-width:22px;text-align:center;}
+.vb-safe{background:var(--green-dim);color:var(--green);}
+.vb-warn{background:var(--amber-dim);color:var(--amber);}
+.vb-danger{background:var(--red-dim);color:var(--red);}
+
+/* ── STAT CARDS ── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;}
+.stat-label{font-size:10px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;}
+.stat-value{font-size:26px;font-family:var(--mono);font-weight:700;line-height:1;}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:4px;}
+
+/* ── SECTION ── */
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.section-title{font-size:12px;font-family:var(--mono);letter-spacing:0.08em;color:var(--muted);text-transform:uppercase;}
+
+/* ── DETAIL PANEL ── */
+.detail-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:22px;}
+.detail-hdr{display:flex;align-items:center;gap:14px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+.detail-avatar{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;}
+.detail-name{font-size:17px;font-weight:600;}
+.detail-meta{font-size:11px;color:var(--muted);margin-top:3px;font-family:var(--mono);}
+.detail-actions{margin-left:auto;display:flex;gap:8px;}
+
+.dstats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;}
+.dstat{background:var(--surface2);border-radius:10px;padding:12px;text-align:center;}
+.dstat-val{font-size:20px;font-family:var(--mono);font-weight:700;}
+.dstat-lbl{font-size:10px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:0.07em;font-family:var(--mono);}
+
+/* ── HEATMAP ── */
+.heatmap-wrap{background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:18px;}
+.heatmap-title{font-size:11px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px;}
+.heatmap-grid{display:flex;gap:3px;align-items:flex-end;height:60px;}
+.heatmap-bar{flex:1;border-radius:3px 3px 0 0;min-height:3px;transition:all 0.3s;cursor:pointer;position:relative;}
+.heatmap-bar:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:4px 8px;font-size:10px;font-family:var(--mono);white-space:nowrap;color:var(--text);pointer-events:none;z-index:10;}
+.heatmap-labels{display:flex;justify-content:space-between;margin-top:6px;}
+.heatmap-label{font-size:9px;font-family:var(--mono);color:var(--muted);}
+
+/* ── TIMELINE ── */
+.timeline-item{display:flex;gap:12px;padding:9px 0;border-bottom:1px solid var(--border);align-items:flex-start;}
+.timeline-item:last-child{border-bottom:none;}
+.tl-dot{width:9px;height:9px;border-radius:50%;margin-top:4px;flex-shrink:0;}
+.tl-time{font-size:11px;font-family:var(--mono);color:var(--muted);min-width:56px;}
+.tl-desc{font-size:13px;}
+.tl-sub{font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:2px;}
+.tl-img{width:80px;height:50px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer;margin-left:auto;flex-shrink:0;}
+.tl-img-placeholder{width:80px;height:50px;border-radius:6px;border:1px dashed var(--border2);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--muted);margin-left:auto;flex-shrink:0;}
+
+/* ── VIOLATION FEED ── */
+.feed-table{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:22px;}
+.feed-head{display:grid;grid-template-columns:110px 140px 1fr 120px 70px;padding:11px 18px;border-bottom:1px solid var(--border);background:var(--surface2);}
+.th{font-size:10px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;}
+.feed-body{max-height:380px;overflow-y:auto;}
+.feed-row{display:grid;grid-template-columns:110px 140px 1fr 120px 70px;padding:12px 18px;border-bottom:1px solid var(--border);align-items:center;transition:background 0.1s;animation:rowIn 0.25s ease;}
+@keyframes rowIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
+.feed-row:hover{background:var(--surface2);}
+.feed-row:last-child{border-bottom:none;}
+.td{font-size:13px;}
+.td-time{font-family:var(--mono);font-size:11px;color:var(--muted);}
+.td-stu{display:flex;align-items:center;gap:8px;}
+.mini-av{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex-shrink:0;}
+.vtag{font-size:10px;font-family:var(--mono);font-weight:700;padding:3px 9px;border-radius:6px;}
+.vtag-phone{background:rgba(91,127,255,0.12);color:#5b7fff;}
+.vtag-seat{background:var(--amber-dim);color:var(--amber);}
+.vtag-face{background:var(--purple-dim);color:var(--purple);}
+.vtag-look{background:var(--orange-dim);color:var(--orange);}
+.vtag-tab{background:var(--red-dim);color:var(--red);}
+.vtag-audio{background:rgba(62,207,142,0.12);color:var(--green);}
+.sev-dot{width:7px;height:7px;border-radius:50%;margin:0 auto;}
+.filter-row{display:flex;gap:6px;}
+.fbtn{font-size:11px;font-family:var(--mono);padding:4px 11px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;transition:all 0.15s;}
+.fbtn.active,.fbtn:hover{background:var(--accent-dim);border-color:rgba(91,127,255,0.3);color:var(--accent);}
+
+/* ── STUDENTS PAGE ── */
+.stu-table{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.stu-tbl-head{display:grid;grid-template-columns:200px 100px 80px 120px 80px 130px;padding:11px 18px;border-bottom:1px solid var(--border);background:var(--surface2);}
+.stu-tbl-row{display:grid;grid-template-columns:200px 100px 80px 120px 80px 130px;padding:12px 18px;border-bottom:1px solid var(--border);align-items:center;}
+.stu-tbl-row:last-child{border-bottom:none;}
+.stu-tbl-row:hover{background:var(--surface2);}
+
+/* ── MODAL ── */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;display:none;align-items:center;justify-content:center;}
+.modal-backdrop.show{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:18px;padding:32px;width:100%;max-width:460px;animation:modalIn 0.25s cubic-bezier(0.16,1,0.3,1);}
+@keyframes modalIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:none}}
+.modal-title{font-size:17px;font-weight:600;margin-bottom:20px;}
+.modal-field{margin-bottom:14px;}
+.modal-field label{display:block;font-size:11px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;}
+.modal-field input,.modal-field select{width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:9px;padding:10px 13px;color:var(--text);font-size:13px;font-family:var(--sans);outline:none;transition:border-color 0.15s;}
+.modal-field input:focus,.modal-field select:focus{border-color:var(--accent);}
+.modal-field select option{background:var(--surface);}
+.modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end;}
+.pwd-display{font-family:var(--mono);font-size:18px;font-weight:700;text-align:center;padding:16px;background:var(--accent-dim);border:1px solid rgba(91,127,255,0.2);border-radius:10px;color:var(--accent);letter-spacing:0.1em;margin:12px 0;}
+.pwd-note{font-size:12px;color:var(--muted);text-align:center;font-family:var(--mono);}
+
+/* ── LIGHTBOX ── */
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:300;display:none;align-items:center;justify-content:center;}
+.lightbox.show{display:flex;}
+.lightbox img{max-width:90vw;max-height:85vh;border-radius:10px;border:1px solid var(--border2);}
+.lightbox-close{position:absolute;top:20px;right:24px;font-size:24px;color:var(--muted);cursor:pointer;background:none;border:none;}
+
+/* ── TERMINATED BANNER ── */
+.term-banner{background:var(--red-dim);border:1px solid rgba(255,78,78,0.25);border-radius:10px;padding:11px 15px;display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.term-text{font-size:13px;font-weight:500;color:var(--red);}
+.term-sub{font-size:10px;color:var(--red);opacity:0.7;margin-top:2px;font-family:var(--mono);}
+
+/* ── EMPTY ── */
+.empty-state{text-align:center;padding:50px 20px;color:var(--muted);}
+.empty-title{font-size:14px;margin-bottom:6px;}
+.empty-sub{font-size:12px;}
+
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+</style>
+</head>
+<body>
+
+<!-- Auth guard overlay -->
+<div id="authGuard" style="position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center;">
+  <div style="font-family:var(--mono);color:var(--muted);font-size:13px;">Verifying session...</div>
+</div>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <circle cx="8" cy="5.5" r="3" stroke="white" stroke-width="1.3"/>
+        <path d="M2 14c0-2.761 2.686-4.5 6-4.5s6 1.739 6 4.5" stroke="white" stroke-width="1.3" stroke-linecap="round"/>
+        <circle cx="13" cy="3" r="1.5" fill="#ff4e4e"/>
+      </svg>
+    </div>
+    <div class="logo-text">Proctor<span>AI</span></div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('monitor',this)">Live Monitor</button>
+    <button class="nav-tab" onclick="showPage('students',this)">Students</button>
+    <button class="nav-tab" onclick="showPage('reports',this)">Reports</button>
+  </div>
+  <div class="header-right">
+    <div class="live-dot-wrap"><div class="live-dot"></div><span id="sessionClock">--:--:--</span></div>
+    <button class="btn-sm" onclick="doLogout()">Sign Out</button>
+  </div>
+</header>
+
+<!-- ══ PAGE: MONITOR ══════════════════════════════════════════ -->
+<div class="page active" id="page-monitor">
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-label">Active Students</div>
+      <div id="studentList"><div style="padding:16px;font-size:12px;color:var(--muted);font-family:var(--mono);">Waiting...</div></div>
+    </aside>
+    <main>
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-label">Active</div><div class="stat-value" id="s-active" style="color:var(--accent)">0</div><div class="stat-sub">students online</div></div>
+        <div class="stat-card"><div class="stat-label">Violations</div><div class="stat-value" id="s-viol" style="color:var(--red)">0</div><div class="stat-sub">this session</div></div>
+        <div class="stat-card"><div class="stat-label">Terminated</div><div class="stat-value" id="s-term" style="color:var(--amber)">0</div><div class="stat-sub">exams ended</div></div>
+        <div class="stat-card"><div class="stat-label">Tab Switches</div><div class="stat-value" id="s-tabs">0</div><div class="stat-sub">detected</div></div>
+      </div>
+
+      <div class="detail-panel" id="detailPanel">
+        <div class="empty-state"><div class="empty-title">Select a student</div><div class="empty-sub">Click any student to view their live violation data and heatmap</div></div>
+      </div>
+
+      <div class="section-hdr">
+        <div class="section-title">Live Feed</div>
+        <div class="filter-row">
+          <button class="fbtn active" onclick="setFilter('all',this)">All</button>
+          <button class="fbtn" onclick="setFilter('PHONE_DETECTED',this)">Phone</button>
+          <button class="fbtn" onclick="setFilter('TAB_SWITCH',this)">Tab</button>
+          <button class="fbtn" onclick="setFilter('LOOKING_AWAY',this)">Gaze</button>
+          <button class="fbtn" onclick="setFilter('AUDIO',this)">Audio</button>
+        </div>
+      </div>
+      <div class="feed-table">
+        <div class="feed-head">
+          <div class="th">Time</div><div class="th">Student</div><div class="th">Violation</div><div class="th">Type</div><div class="th">Sev</div>
+        </div>
+        <div class="feed-body" id="violFeed"><div class="empty-state"><div class="empty-title">No violations yet</div></div></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ══ PAGE: STUDENTS ════════════════════════════════════════ -->
+<div class="page" id="page-students" style="flex-direction:column;">
+  <main style="max-width:1000px;width:100%;margin:0 auto;padding:28px;">
+    <div class="section-hdr" style="margin-bottom:20px;">
+      <div class="section-title">Registered Students</div>
+      <button class="btn-sm btn-accent" onclick="openAddStudent()">+ Add Student</button>
+    </div>
+    <div class="stu-table">
+      <div class="stu-tbl-head">
+        <div class="th">Name</div><div class="th">Student ID</div><div class="th">Violations</div><div class="th">Status</div><div class="th">Exam</div><div class="th">Actions</div>
+      </div>
+      <div id="studentTableBody"><div class="empty-state"><div class="empty-title">No students yet</div><div class="empty-sub">Add students to register their credentials</div></div></div>
+    </div>
+  </main>
+</div>
+
+<!-- ══ PAGE: REPORTS ════════════════════════════════════════ -->
+<div class="page" id="page-reports" style="flex-direction:column;">
+  <main style="max-width:1000px;width:100%;margin:0 auto;padding:28px;">
+    <div class="section-hdr" style="margin-bottom:20px;">
+      <div class="section-title">Exam Reports</div>
+      <button class="btn-sm" onclick="exportAllCSV()">Export All CSV</button>
+    </div>
+    <div id="reportsList"></div>
+  </main>
+</div>
+
+<!-- ══ MODAL: Add Student ══ -->
+<div class="modal-backdrop" id="addStudentModal">
+  <div class="modal">
+    <div class="modal-title">Add Student</div>
+    <div class="modal-field"><label>Full Name</label><input type="text" id="newStuName" placeholder="e.g. Arjun Mehta"/></div>
+    <div class="modal-field"><label>Student ID</label><input type="text" id="newStuId" placeholder="e.g. 22IT001"/></div>
+    <div class="modal-field"><label>Exam Slot</label>
+      <select id="newStuSlot">
+        <option value="morning">Morning (9:00 AM)</option>
+        <option value="afternoon">Afternoon (2:00 PM)</option>
+        <option value="evening">Evening (5:00 PM)</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-sm" onclick="closeModal('addStudentModal')">Cancel</button>
+      <button class="btn-sm btn-accent" onclick="createStudent()">Generate Credentials</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Show Credentials ══ -->
+<div class="modal-backdrop" id="credModal">
+  <div class="modal">
+    <div class="modal-title">Student Credentials</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Share these with the student. They use these to log in to the Chrome Extension.</p>
+    <div class="modal-field"><label>Student ID (username)</label><div class="pwd-display" id="credId">--</div></div>
+    <div class="modal-field"><label>Password</label><div class="pwd-display" id="credPwd">--</div></div>
+    <div class="pwd-note">Password is stored securely. Screenshot and share with the student.</div>
+    <div class="modal-actions">
+      <button class="btn-sm" onclick="copyCredentials()">Copy Both</button>
+      <button class="btn-sm btn-accent" onclick="closeModal('credModal')">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LIGHTBOX ══ -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightboxImg" src="" alt="Evidence screenshot"/>
+</div>
+
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import{getAuth,onAuthStateChanged,signOut}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import{getFirestore,collection,onSnapshot,query,orderBy,doc,setDoc,updateDoc,deleteDoc,getDocs,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import{FIREBASE_CONFIG}from"./config.js";
+
+const app=initializeApp(FIREBASE_CONFIG);
+const auth=getAuth(app);
+const db=getFirestore(app);
+
+// ── Auth guard ──
+onAuthStateChanged(auth,user=>{
+  if(!user){window.location.href="login.html";return;}
+  document.getElementById('authGuard').style.display='none';
+  initDashboard();
+});
+
+window.doLogout=()=>signOut(auth).then(()=>{window.location.href="login.html";});
+
+// ── State ──
+let students={},violations=[],activeFilter='all',selectedStu=null;
+
+// ── Color pool ──
+const COLORS=[
+  {bg:'rgba(91,127,255,0.18)',c:'#5b7fff'},
+  {bg:'rgba(62,207,142,0.15)',c:'#3ecf8e'},
+  {bg:'rgba(245,166,35,0.15)',c:'#f5a623'},
+  {bg:'rgba(200,100,255,0.15)',c:'#c864ff'},
+  {bg:'rgba(255,140,60,0.15)',c:'#ff8c3c'},
+  {bg:'rgba(255,78,78,0.15)',c:'#ff4e4e'},
+];
+function getColor(id){const i=Math.abs([...id].reduce((a,c)=>a+c.charCodeAt(0),0))%COLORS.length;return COLORS[i];}
+function initials(name){return(name||'?').split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2);}
+function fmtTime(ts){if(!ts)return'--';const d=ts.toDate?ts.toDate():new Date(ts);return d.toLocaleTimeString('en-IN',{hour12:false});}
+function fmtDate(ts){if(!ts)return'--';const d=ts.toDate?ts.toDate():new Date(ts);return d.toLocaleDateString('en-IN');}
+
+const VTYPES={
+  'PHONE_DETECTED':{label:'Phone Detected',cls:'vtag-phone',color:'#5b7fff',sev:'high'},
+  'LEFT_SEAT':{label:'Left Seat',cls:'vtag-seat',color:'#f5a623',sev:'medium'},
+  'MULTIPLE_FACES':{label:'Multiple Faces',cls:'vtag-face',color:'#c864ff',sev:'high'},
+  'LOOKING_AWAY_SHORT':{label:'Looking Away',cls:'vtag-look',color:'#ff8c3c',sev:'low'},
+  'LOOKING_AWAY_LONG':{label:'Looking Away (Long)',cls:'vtag-look',color:'#ff8c3c',sev:'medium'},
+  'TAB_SWITCH':{label:'Tab Switch',cls:'vtag-tab',color:'#ff4e4e',sev:'high'},
+  'WINDOW_UNFOCUSED':{label:'Window Unfocused',cls:'vtag-tab',color:'#ff4e4e',sev:'medium'},
+  'AUDIO_DETECTED':{label:'Audio Detected',cls:'vtag-audio',color:'#3ecf8e',sev:'medium'},
+};
+function vt(type){return VTYPES[type]||{label:type,cls:'vtag-tab',color:'#7a7f92',sev:'low'};}
+function sevColor(s){return s==='high'?'var(--red)':s==='medium'?'var(--amber)':'var(--green)';}
+
+function initDashboard(){
+  // Clock
+  setInterval(()=>{document.getElementById('sessionClock').textContent=new Date().toLocaleTimeString('en-IN',{hour12:false});},1000);
+
+  // Students listener
+  onSnapshot(collection(db,'students'),snap=>{
+    snap.forEach(d=>{students[d.id]={id:d.id,...d.data()};});
+    renderSidebar();renderStudentTable();renderReports();updateStats();
+    if(selectedStu)renderDetail();
+  });
+
+  // Violations listener
+  const vRef=query(collection(db,'violations'),orderBy('timestamp','desc'));
+  onSnapshot(vRef,snap=>{
+    violations=snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderFeed();updateStats();
+    if(selectedStu)renderDetail();
+  });
+}
+
+// ── Stats ──
+function updateStats(){
+  const arr=Object.values(students);
+  document.getElementById('s-active').textContent=arr.filter(s=>s.online&&!s.terminated).length;
+  document.getElementById('s-viol').textContent=violations.length;
+  document.getElementById('s-term').textContent=arr.filter(s=>s.terminated).length;
+  document.getElementById('s-tabs').textContent=violations.filter(v=>v.type==='TAB_SWITCH').length;
+}
+
+// ── Sidebar ──
+function renderSidebar(){
+  const el=document.getElementById('studentList');
+  const arr=Object.values(students);
+  if(!arr.length){el.innerHTML='<div style="padding:16px;font-size:12px;color:var(--muted);font-family:var(--mono);">No students yet</div>';return;}
+  el.innerHTML=arr.map(s=>{
+    const c=getColor(s.id);const vc=s.violationCount||0;
+    const vcls=vc>=5?'vb-danger':vc>=2?'vb-warn':'vb-safe';
+    const active=selectedStu===s.id?' active':'';
+    return`<div class="stu-card${active}" onclick="selectStudent('${s.id}')">
+      <div class="stu-avatar" style="background:${c.bg};color:${c.c};">${initials(s.name)}</div>
+      <div class="stu-meta"><div class="stu-name">${s.name}${s.terminated?' ⛔':''}</div><div class="stu-status">${s.terminated?'Terminated':s.online?'Active':'Offline'}</div></div>
+      <div class="vbadge ${vcls}">${vc}</div></div>`;
+  }).join('');
+}
+
+// ── Select student ──
+window.selectStudent=function(id){
+  selectedStu=id;
+  renderSidebar();
+  renderDetail();
+};
+
+// ── Detail Panel ──
+function renderDetail(){
+  const panel=document.getElementById('detailPanel');
+  const s=students[selectedStu];
+  if(!s){panel.innerHTML='<div class="empty-state"><div class="empty-title">Select a student</div></div>';return;}
+  const c=getColor(s.id);
+  const sv=violations.filter(v=>v.studentId===s.id);
+  const vc=sv.length,tabs=sv.filter(v=>v.type==='TAB_SWITCH').length,audio=sv.filter(v=>v.type==='AUDIO_DETECTED').length,phones=sv.filter(v=>v.type==='PHONE_DETECTED').length;
+
+  const termHTML=s.terminated?`<div class="term-banner"><div><div class="term-text">⛔ Exam Terminated</div><div class="term-sub">Max violations reached · ${fmtTime(s.terminatedAt)}</div></div></div>`:'';
+
+  // Heatmap — bucket violations into 20 time slots
+  const heatHTML=buildHeatmap(sv);
+
+  // Timeline
+  const tlHTML=sv.length===0?`<div style="color:var(--muted);font-size:13px;padding:12px 0;">No violations recorded</div>`:
+    sv.slice(0,30).map(v=>{
+      const info=vt(v.type);
+      const imgHTML=v.screenshotUrl
+        ?`<img class="tl-img" src="${v.screenshotUrl}" alt="evidence" onclick="openLightbox('${v.screenshotUrl}')">`
+        :`<div class="tl-img-placeholder">no img</div>`;
+      return`<div class="timeline-item">
+        <div class="tl-dot" style="background:${info.color};"></div>
+        <div class="tl-time">${fmtTime(v.timestamp)}</div>
+        <div style="flex:1"><div class="tl-desc">${info.label}</div><div class="tl-sub">${v.type}</div></div>
+        ${imgHTML}</div>`;
+    }).join('');
+
+  panel.innerHTML=`${termHTML}
+    <div class="detail-hdr">
+      <div class="detail-avatar" style="background:${c.bg};color:${c.c};">${initials(s.name)}</div>
+      <div><div class="detail-name">${s.name}</div><div class="detail-meta">${s.id} · ${s.online?'🟢 Online':'⚫ Offline'}</div></div>
+      <div class="detail-actions"><button class="btn-sm" onclick="viewReport('${s.id}')">Full Report</button></div>
+    </div>
+    <div class="dstats">
+      <div class="dstat"><div class="dstat-val" style="color:var(--red)">${vc}</div><div class="dstat-lbl">Violations</div></div>
+      <div class="dstat"><div class="dstat-val" style="color:var(--accent)">${tabs}</div><div class="dstat-lbl">Tab Switches</div></div>
+      <div class="dstat"><div class="dstat-val" style="color:var(--amber)">${phones}</div><div class="dstat-lbl">Phone</div></div>
+      <div class="dstat"><div class="dstat-val" style="color:var(--green)">${audio}</div><div class="dstat-lbl">Audio</div></div>
+    </div>
+    ${heatHTML}
+    <div class="section-title" style="margin-bottom:10px;">Violation Timeline</div>
+    <div>${tlHTML}</div>`;
+}
+
+function buildHeatmap(sv){
+  if(!sv.length)return'';
+  const times=sv.map(v=>v.timestamp?.toDate?v.timestamp.toDate():new Date(v.timestamp)).filter(Boolean);
+  if(!times.length)return'';
+  const mn=Math.min(...times),mx=Math.max(...times);
+  const range=Math.max(mx-mn,60000);
+  const SLOTS=30;
+  const buckets=Array(SLOTS).fill(0);
+  times.forEach(t=>{const idx=Math.min(SLOTS-1,Math.floor(((t-mn)/range)*SLOTS));buckets[idx]++;});
+  const maxB=Math.max(...buckets,1);
+  const bars=buckets.map((b,i)=>{
+    const h=Math.max(4,Math.round((b/maxB)*56));
+    const col=b===0?'var(--surface3)':b>=3?'var(--red)':b>=2?'var(--amber)':'var(--accent)';
+    const label=b>0?`${b} violation${b>1?'s':''}`:'-';
+    return`<div class="heatmap-bar" style="height:${h}px;background:${col};" data-tip="${label}"></div>`;
+  }).join('');
+  const startLbl=new Date(mn).toLocaleTimeString('en-IN',{hour12:false,hour:'2-digit',minute:'2-digit'});
+  const endLbl=new Date(mx).toLocaleTimeString('en-IN',{hour12:false,hour:'2-digit',minute:'2-digit'});
+  return`<div class="heatmap-wrap">
+    <div class="heatmap-title">Violation Heatmap</div>
+    <div class="heatmap-grid">${bars}</div>
+    <div class="heatmap-labels"><span class="heatmap-label">${startLbl}</span><span class="heatmap-label">${endLbl}</span></div>
+  </div>`;
+}
+
+// ── Feed ──
+window.setFilter=function(f,btn){
+  activeFilter=f;
+  document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderFeed();
+};
+function renderFeed(){
+  const feed=document.getElementById('violFeed');
+  let filtered=activeFilter==='all'?violations:violations.filter(v=>v.type===activeFilter||v.type.startsWith(activeFilter));
+  if(!filtered.length){feed.innerHTML='<div class="empty-state"><div class="empty-title">No violations</div></div>';return;}
+  feed.innerHTML=filtered.slice(0,80).map(v=>{
+    const info=vt(v.type);const s=students[v.studentId]||{name:v.studentId||'?'};const c=getColor(v.studentId||'x');
+    return`<div class="feed-row" onclick="selectStudent('${v.studentId||''}')">
+      <div class="td td-time">${fmtTime(v.timestamp)}</div>
+      <div class="td td-stu"><div class="mini-av" style="background:${c.bg};color:${c.c};">${initials(s.name)}</div>${s.name}</div>
+      <div class="td">${info.label}</div>
+      <div class="td"><span class="vtag ${info.cls}">${v.type.replace(/_/g,' ')}</span></div>
+      <div class="td"><div class="sev-dot" style="background:${sevColor(info.sev)};"></div></div>
+    </div>`;
+  }).join('');
+}
+
+// ── Student Table ──
+function renderStudentTable(){
+  const el=document.getElementById('studentTableBody');
+  const arr=Object.values(students);
+  if(!arr.length){el.innerHTML='<div class="empty-state"><div class="empty-title">No students yet</div></div>';return;}
+  el.innerHTML=arr.map(s=>{
+    const vc=s.violationCount||0;const vcls=vc>=5?'vb-danger':vc>=2?'vb-warn':'vb-safe';
+    const statusCol=s.terminated?'var(--red)':s.online?'var(--green)':'var(--muted)';
+    const statusTxt=s.terminated?'Terminated':s.online?'Active':'Offline';
+    return`<div class="stu-tbl-row">
+      <div class="td" style="font-weight:500">${s.name}</div>
+      <div class="td" style="font-family:var(--mono);font-size:12px;color:var(--muted);">${s.id}</div>
+      <div class="td"><span class="vbadge ${vcls}">${vc}</span></div>
+      <div class="td" style="color:${statusCol};font-size:13px;">${statusTxt}</div>
+      <div class="td" style="font-size:12px;color:var(--muted);">${s.slot||'—'}</div>
+      <div class="td" style="display:flex;gap:6px;">
+        <button class="btn-sm" onclick="showCreds('${s.id}','${s.name}','${s.password||''}')">Creds</button>
+        <button class="btn-sm" onclick="viewReport('${s.id}')">Report</button>
+        <button class="btn-sm btn-danger" onclick="deleteStudent('${s.id}')">Del</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Reports ──
+function renderReports(){
+  const el=document.getElementById('reportsList');
+  const arr=Object.values(students);
+  if(!arr.length){el.innerHTML='<div class="empty-state"><div class="empty-title">No students</div></div>';return;}
+  el.innerHTML=arr.map(s=>{
+    const sv=violations.filter(v=>v.studentId===s.id);
+    const vc=sv.length;const c=getColor(s.id);
+    const statusCol=s.terminated?'var(--red)':vc===0?'var(--green)':vc>=3?'var(--amber)':'var(--muted)';
+    const verdict=s.terminated?'TERMINATED':vc===0?'CLEAN':vc>=4?'HIGH RISK':'FLAGGED';
+    return`<div style="display:flex;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:10px;gap:16px;">
+      <div class="stu-avatar" style="background:${c.bg};color:${c.c};width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;">${initials(s.name)}</div>
+      <div style="flex:1"><div style="font-weight:600;font-size:14px;">${s.name}</div><div style="font-size:11px;color:var(--muted);font-family:var(--mono);">${s.id} · ${vc} violation${vc!==1?'s':''}</div></div>
+      <div style="font-size:11px;font-family:var(--mono);font-weight:700;color:${statusCol};padding:3px 10px;background:${statusCol}22;border-radius:6px;">${verdict}</div>
+      <button class="btn-sm" onclick="viewReport('${s.id}')">View Summary</button>
+      <button class="btn-sm" onclick="exportStudentPDF('${s.id}')">Export PDF</button>
+    </div>`;
+  }).join('');
+}
+
+// ── View report (opens report.html with student id) ──
+window.viewReport=function(id){window.open(`report.html?student=${id}`,'_blank');};
+
+// ── Export CSV ──
+window.exportAllCSV=function(){
+  const rows=[['Timestamp','Student ID','Student Name','Violation Type','Severity']];
+  violations.forEach(v=>{
+    const s=students[v.studentId]||{name:v.studentId};
+    const info=vt(v.type);
+    const ts=v.timestamp?.toDate?v.timestamp.toDate().toISOString():(v.timestamp||'');
+    rows.push([ts,v.studentId,s.name,v.type,info.sev]);
+  });
+  const csv=rows.map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download=`proctor_report_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+};
+
+window.exportStudentPDF=function(id){
+  // Redirects to report page which has PDF export
+  window.open(`report.html?student=${id}&export=pdf`,'_blank');
+};
+
+// ── Student management ──
+window.openAddStudent=()=>document.getElementById('addStudentModal').classList.add('show');
+window.closeModal=id=>document.getElementById(id).classList.remove('show');
+
+window.createStudent=async function(){
+  const name=document.getElementById('newStuName').value.trim();
+  const sid=document.getElementById('newStuId').value.trim();
+  const slot=document.getElementById('newStuSlot').value;
+  if(!name||!sid){alert('Please fill all fields');return;}
+  // Generate random password
+  const pwd=Math.random().toString(36).slice(2,8).toUpperCase();
+  try{
+    await setDoc(doc(db,'students',sid),{
+      name,id:sid,slot,password:pwd,
+      online:false,terminated:false,violationCount:0,
+      createdAt:serverTimestamp()
+    });
+    closeModal('addStudentModal');
+    document.getElementById('newStuName').value='';
+    document.getElementById('newStuId').value='';
+    showCredentials(sid,name,pwd);
+  }catch(e){alert('Error: '+e.message);}
+};
+
+window.showCreds=function(id,name,pwd){
+  document.getElementById('credId').textContent=id;
+  document.getElementById('credPwd').textContent=pwd||'(set manually)';
+  document.getElementById('credModal').classList.add('show');
+};
+function showCredentials(id,name,pwd){
+  document.getElementById('credId').textContent=id;
+  document.getElementById('credPwd').textContent=pwd;
+  document.getElementById('credModal').classList.add('show');
+}
+
+window.copyCredentials=function(){
+  const id=document.getElementById('credId').textContent;
+  const pwd=document.getElementById('credPwd').textContent;
+  navigator.clipboard.writeText(`Student ID: ${id}\nPassword: ${pwd}`);
+  alert('Copied to clipboard!');
+};
+
+window.deleteStudent=async function(id){
+  if(!confirm(`Delete student ${id}? This cannot be undone.`))return;
+  try{await deleteDoc(doc(db,'students',id));}catch(e){alert('Error: '+e.message);}
+};
+
+// ── Lightbox ──
+window.openLightbox=function(url){
+  document.getElementById('lightboxImg').src=url;
+  document.getElementById('lightbox').classList.add('show');
+};
+window.closeLightbox=()=>document.getElementById('lightbox').classList.remove('show');
+
+// ── Page nav ──
+window.showPage=function(name,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  btn.classList.add('active');
+};
+</script>
+</body>
+</html>

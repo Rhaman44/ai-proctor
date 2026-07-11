@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><title>ProctorAI</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0d0f14;--s:#151820;--s2:#1c2030;--b:rgba(255,255,255,0.08);--b2:rgba(255,255,255,0.13);
+  --t:#e8eaf0;--m:#7a7f92;--a:#5b7fff;--ad:rgba(91,127,255,0.12);
+  --r:#ff4e4e;--rd:rgba(255,78,78,0.12);--g:#3ecf8e;--gd:rgba(62,207,142,0.1);
+  --mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif;}
+body{width:300px;background:var(--bg);color:var(--t);font-family:var(--sans);}
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:13px 15px;border-bottom:1px solid var(--b);}
+.logo{display:flex;align-items:center;gap:8px;}
+.li{width:26px;height:26px;background:var(--a);border-radius:7px;display:flex;align-items:center;justify-content:center;}
+.lt{font-family:var(--mono);font-size:13px;font-weight:700;}.lt span{color:var(--a);}
+.hs{font-size:10px;font-family:var(--mono);color:var(--m);}
+#loginView{padding:16px 15px;}
+.f{margin-bottom:11px;}
+label{display:block;font-size:10px;font-family:var(--mono);color:var(--m);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;}
+input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--b2);border-radius:7px;padding:9px 11px;color:var(--t);font-size:13px;outline:none;transition:border-color .15s;}
+input:focus{border-color:var(--a);}input:disabled{opacity:.4;}
+.btn{width:100%;padding:10px;border-radius:7px;border:none;font-size:13px;font-weight:600;font-family:var(--sans);cursor:pointer;transition:all .15s;}
+.btn-a{background:var(--a);color:#fff;}.btn-a:hover{background:#4a6ef5;}.btn-a:disabled{opacity:.45;cursor:not-allowed;}
+.btn-o{background:transparent;border:1px solid var(--b2);color:var(--m);margin-top:7px;}.btn-o:hover{background:var(--s2);color:var(--t);}
+.btn-d{background:var(--rd);border:1px solid rgba(255,78,78,.25);color:var(--r);margin-top:7px;}.btn-d:hover{background:rgba(255,78,78,.2);}
+.err{background:var(--rd);border:1px solid rgba(255,78,78,.2);border-radius:6px;padding:7px 11px;font-size:11px;color:var(--r);margin-bottom:11px;display:none;}
+.err.show{display:block;}
+#activeView{display:none;padding:14px 15px;}
+.stu-box{display:flex;align-items:center;gap:9px;padding:11px;background:var(--s2);border-radius:9px;margin-bottom:12px;}
+.sav{width:34px;height:34px;border-radius:50%;background:var(--ad);color:var(--a);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
+.sn{font-size:13px;font-weight:600;}.si{font-size:10px;font-family:var(--mono);color:var(--m);}
+.pill{display:flex;align-items:center;gap:5px;padding:5px 9px;border-radius:5px;margin-bottom:9px;font-size:11px;font-family:var(--mono);}
+.pill-idle{background:rgba(255,255,255,.04);color:var(--m);}
+.pill-active{background:var(--gd);color:var(--g);border:1px solid rgba(62,207,142,.15);}
+.pdot{width:5px;height:5px;border-radius:50%;}
+.pdot-idle{background:var(--m);}.pdot-active{background:var(--g);animation:pulse 1.5s ease infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:11px;}
+.sb{background:var(--s2);border-radius:7px;padding:9px;text-align:center;}
+.sv{font-size:19px;font-family:var(--mono);font-weight:700;}.sl{font-size:9px;color:var(--m);margin-top:1px;text-transform:uppercase;letter-spacing:.06em;font-family:var(--mono);}
+.at-row{display:flex;align-items:center;justify-content:space-between;padding:9px 11px;background:var(--s2);border-radius:7px;margin-bottom:8px;cursor:pointer;}
+.at-lbl{font-size:12px;font-family:var(--mono);}
+.tg{width:30px;height:17px;border-radius:9px;position:relative;transition:background .2s;}
+.tg.on{background:var(--g);}.tg.off{background:var(--s);}
+.tg::after{content:'';position:absolute;width:11px;height:11px;border-radius:50%;background:#fff;top:3px;transition:left .2s;}
+.tg.on::after{left:16px;}.tg.off::after{left:3px;}
+.ab{height:4px;background:var(--s2);border-radius:2px;overflow:hidden;margin-bottom:10px;}
+.af{height:100%;background:var(--g);width:0%;transition:width .1s;border-radius:2px;}
+.ws{font-size:10px;font-family:var(--mono);text-align:center;padding:5px;background:rgba(255,255,255,.03);border-radius:5px;margin-bottom:9px;}
+.ws-ok{color:var(--g);}.ws-fail{color:#f5a623;}
+.spin{display:inline-block;width:11px;height:11px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite;vertical-align:middle;margin-right:5px;}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div class="logo">
+    <div class="li">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <circle cx="7" cy="4.5" r="2.5" stroke="white" stroke-width="1.2"/>
+        <path d="M1.5 12c0-2.485 2.462-4 5.5-4s5.5 1.515 5.5 4" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+        <circle cx="12" cy="2.5" r="1.5" fill="#ff4e4e"/>
+      </svg>
+    </div>
+    <div class="lt">Proctor<span>AI</span></div>
+  </div>
+  <div class="hs" id="hdrStatus">v2.0</div>
+</div>
+
+<!-- LOGIN -->
+<div id="loginView">
+  <div style="height:8px;"></div>
+  <div class="err" id="errBox"></div>
+  <div class="f"><label>Student ID</label><input type="text" id="loginId" placeholder="e.g. 22IT001" autocomplete="off"/></div>
+  <div class="f"><label>Password</label><input type="password" id="loginPwd" placeholder="From your teacher"/></div>
+  <button class="btn btn-a" id="loginBtn">Sign In to Proctor</button>
+  <div style="font-size:11px;color:var(--m);font-family:var(--mono);text-align:center;margin-top:11px;padding-top:11px;border-top:1px solid var(--b);">
+    Get credentials from your teacher
+  </div>
+</div>
+
+<!-- ACTIVE -->
+<div id="activeView">
+  <div class="stu-box">
+    <div class="sav" id="stuAv">?</div>
+    <div><div class="sn" id="stuName">—</div><div class="si" id="stuId">—</div></div>
+  </div>
+  <div class="pill pill-idle" id="statusPill">
+    <div class="pdot pdot-idle" id="pdot"></div>
+    <span id="pillTxt">Not monitoring</span>
+  </div>
+  <div class="sg">
+    <div class="sb"><div class="sv" id="vcCount" style="color:#ff4e4e;">0</div><div class="sl">Violations</div></div>
+    <div class="sb"><div class="sv" id="tsCount" style="color:#5b7fff;">0</div><div class="sl">Tab Switches</div></div>
+  </div>
+  <div class="at-row" id="audioRow">
+    <span class="at-lbl">🎙 Audio Monitoring</span>
+    <div class="tg off" id="audioTg"></div>
+  </div>
+  <div class="ab"><div class="af" id="audioFill"></div></div>
+  <div class="ws" id="wsEl">⬤ Connecting to backend...</div>
+  <button class="btn btn-o" id="btnStart">Start Exam Session</button>
+  <button class="btn btn-d" id="btnLogout">Sign Out</button>
+</div>
+
+<script src="popup.js" type="module"></script>
+</body>
+</html>

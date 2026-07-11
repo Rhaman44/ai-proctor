@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>ProctorAI — Teacher Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0f14;--s:#151820;--s2:#1c2030;--b:rgba(255,255,255,0.07);--b2:rgba(255,255,255,0.12);
+  --t:#e8eaf0;--m:#7a7f92;--a:#5b7fff;--ad:rgba(91,127,255,0.12);
+  --r:#ff4e4e;--rd:rgba(255,78,78,0.12);--g:#3ecf8e;
+  --mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif;
+}
+body{background:var(--bg);color:var(--t);font-family:var(--sans);min-height:100vh;display:flex;align-items:center;justify-content:center;}
+.grid-bg{position:fixed;inset:0;background-image:linear-gradient(rgba(91,127,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(91,127,255,0.025) 1px,transparent 1px);background-size:48px 48px;pointer-events:none}
+.glow{position:fixed;top:-180px;left:50%;transform:translateX(-50%);width:700px;height:500px;background:radial-gradient(ellipse,rgba(91,127,255,0.05) 0%,transparent 70%);pointer-events:none}
+.card{width:100%;max-width:390px;background:var(--s);border:1px solid var(--b);border-radius:20px;padding:40px;animation:up 0.35s cubic-bezier(.16,1,.3,1)}
+@keyframes up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.logo{text-align:center;margin-bottom:32px}
+.logo-icon{width:52px;height:52px;background:var(--a);border-radius:14px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px}
+.logo-title{font-family:var(--mono);font-size:18px;font-weight:700}.logo-title span{color:var(--a)}
+.logo-sub{font-size:13px;color:var(--m);margin-top:4px}
+.f{margin-bottom:15px}
+label{display:block;font-size:10px;font-family:var(--mono);color:var(--m);text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px}
+input{width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--b2);border-radius:10px;padding:11px 14px;color:var(--t);font-size:14px;font-family:var(--sans);outline:none;transition:border-color .15s}
+input:focus{border-color:var(--a)}
+.btn{width:100%;padding:12px;border-radius:10px;border:none;font-size:14px;font-weight:600;font-family:var(--sans);cursor:pointer;transition:all .15s;margin-top:6px;background:var(--a);color:#fff;letter-spacing:.02em}
+.btn:hover{background:#4a6ef5;transform:translateY(-1px)}.btn:active{transform:none}.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.err{background:var(--rd);border:1px solid rgba(255,78,78,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--r);margin-bottom:14px;display:none}
+.err.show{display:block}
+.note{background:var(--ad);border:1px solid rgba(91,127,255,.15);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--a);font-family:var(--mono);line-height:1.6;margin-top:18px}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div><div class="glow"></div>
+<div class="card">
+  <div class="logo">
+    <div class="logo-icon">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+        <circle cx="13" cy="9" r="5" stroke="white" stroke-width="1.8"/>
+        <path d="M4 22c0-4.418 4.03-7 9-7s9 2.582 9 7" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="20" cy="5" r="2.5" fill="#ff4e4e"/>
+      </svg>
+    </div>
+    <div class="logo-title">Proctor<span>AI</span></div>
+    <div class="logo-sub">Teacher Dashboard</div>
+  </div>
+  <div class="err" id="err"></div>
+  <div class="f"><label>Email</label><input type="email" id="email" placeholder="teacher@school.edu" autocomplete="email"/></div>
+  <div class="f"><label>Password</label><input type="password" id="pwd" placeholder="••••••••" autocomplete="current-password"/></div>
+  <button class="btn" id="btn" onclick="login()">Sign In</button>
+  <div class="note">Students log in via the Chrome Extension — not here.<br>Contact your admin if you don't have credentials.</div>
+</div>
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import{getAuth,signInWithEmailAndPassword,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import{FIREBASE_CONFIG}from"./config.js";
+const app=initializeApp(FIREBASE_CONFIG);
+const auth=getAuth(app);
+onAuthStateChanged(auth,u=>{if(u)location.href="index.html";});
+window.login=async()=>{
+  const e=document.getElementById('email').value.trim();
+  const p=document.getElementById('pwd').value;
+  const btn=document.getElementById('btn');
+  const err=document.getElementById('err');
+  if(!e||!p){showErr("Enter email and password.");return;}
+  btn.disabled=true;btn.innerHTML='<span class="spin"></span>Signing in...';err.classList.remove('show');
+  try{
+    await signInWithEmailAndPassword(auth,e,p);
+    location.href="index.html";
+  }catch(ex){
+    const m={
+      'auth/user-not-found':'No account with that email.',
+      'auth/wrong-password':'Incorrect password.',
+      'auth/too-many-requests':'Too many attempts. Try later.',
+      'auth/invalid-email':'Invalid email address.',
+    };
+    showErr(m[ex.code]||'Sign-in failed. Check credentials.');
+  }finally{btn.disabled=false;btn.innerHTML='Sign In';}
+};
+function showErr(m){const e=document.getElementById('err');e.textContent=m;e.classList.add('show');}
+document.addEventListener('keydown',e=>{if(e.key==='Enter')window.login();});
+</script>
+</body>
+</html>

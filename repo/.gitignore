@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+.pytest_cache/
+venv/
+.venv/
+env/
+*.egg-info/
+
+# Secrets — never commit these
+.env
+serviceAccountKey.json
+*serviceAccountKey*.json
+
+# Logs & runtime data
+logs/*.log
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Node (dashboard/extension, if applicable)
+node_modules/
